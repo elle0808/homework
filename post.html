@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>貼文內容頁面</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#DAB6E8] flex justify-center items-start min-h-screen p-8">
+
+  <div class="flex w-full max-w-6xl gap-6">
+    <!-- 左側主貼文 -->
+    <section class="bg-white rounded-xl shadow-md flex-1 p-8">
+      <h1 id="title" class="text-3xl font-semibold mb-2">ASI亞洲邀請賽精彩回顧</h1>
+      <div class="text-gray-500 mb-4 flex">
+        <p id="author" class="">Lucid</p>
+      </div>
+      <div id="content" class="w-full mb-6">
+        <p>diable真的好強! 國師看了都說讚</p>
+        <img src="./img/diable五殺.png" alt="貼文圖片" class="w-full rounded-md mt-4">
+      </div>
+
+      <div class="border-t border-gray-300 pt-4 flex items-center space-x-2">
+        <button class="like flex items-center" id="likeBtn">
+          <svg id="heartIcon" xmlns="http://www.w3.org/2000/svg" fill="none"
+               viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+               class="w-7 h-7 transition-colors duration-200">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5A4.69 4.69 0 0012 5.865a4.69 4.69 0 00-4.312-2.115C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+          </svg>
+          <span id="likeCount" class="text-lg ml-1">0</span>
+          <span class="text-lg ml-2">喜歡</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 右側留言區 -->
+    <aside class="w-80 space-y-4">
+      <!-- 留言輸入 -->
+      <div class="flex space-x-2">
+        <input type="text" id="comment_content" placeholder="寫下你的留言吧！"
+               class="flex-1 rounded-md px-3 py-2 text-sm text-gray-700 placeholder-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        <button type="submit" id="commentBtn"
+                class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600">發佈</button>
+      </div>
+
+      <!-- 留言列表 -->
+      <div id="commentList" class="space-y-3"></div>
+    </aside>
+  </div>
+
+  <script>
+    // === 設定 ===
+    const API = "http://127.0.0.1:8000"; // FastAPI 後端位址
+    const POST_ID = "post1";
+
+    // === 元素 ===
+    const likeBtn = document.getElementById("likeBtn");
+    const icon = document.getElementById("heartIcon");
+    const count = document.getElementById("likeCount");
+    const commentBtn = document.getElementById("commentBtn");
+    const commentInput = document.getElementById("comment_content");
+    const commentList = document.getElementById("commentList");
+
+    let liked = false;
+
+    // === 初始化 ===
+    async function init() {
+      const res = await fetch(`${API}/post/${POST_ID}`);
+      const data = await res.json();
+      count.textContent = data.likes;
+      renderComments(data.comments);
+    }
+
+    // === 點愛心 ===
+    likeBtn.addEventListener("click", async () => {
+      liked = !liked;
+      const action = liked ? "like" : "unlike";
+
+      // 更新顏色
+      icon.setAttribute("fill", liked ? "red" : "none");
+      icon.setAttribute("stroke", liked ? "red" : "currentColor");
+
+      // 發送請求
+      const res = await fetch(`${API}/post/${POST_ID}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      count.textContent = data.likes;
+    });
+
+    // === 發佈留言 ===
+    commentBtn.addEventListener("click", async () => {
+      const content = commentInput.value.trim();
+      if (!content) return alert("請輸入留言內容！");
+      const user = "訪客"; // 作業用，未登入情況
+
+      const res = await fetch(`${API}/post/${POST_ID}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, content })
+      });
+      const data = await res.json();
+      renderComments(data.comments);
+      commentInput.value = "";
+    });
+
+    // === 渲染留言 ===
+    function renderComments(comments) {
+      commentList.innerHTML = "";
+      comments.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "bg-white rounded-md p-4 shadow-sm";
+        div.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <p class="font-medium">${c.user}</p>
+            <span class="text-sm text-gray-500">${c.date}</span>
+          </div>
+          <p class="text-gray-800 leading-relaxed">${c.content}</p>
+        `;
+        commentList.appendChild(div);
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

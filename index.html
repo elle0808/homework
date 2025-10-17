@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>窩不知道</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#DAB6E8] min-h-screen">
+  <header class="bg-[#FFFFFF]">
+    <h1 class="text-2xl font-bold py-3 ml-4">窩不知道</h1>
+  </header>
+    <div id="list" class="p-8 flex flex-wrap gap-6 justify-start">
+        <p class="text-gray-600">載入中，請稍候...</p>
+    </div>
+    <script>
+        const API = 'http://127.0.0.1:8000'; 
+        
+        //獲取DOM元素
+        const container = document.getElementById('article-list-container');
+        const loadingMessage = document.getElementById('loading-message');
+        //卡片
+        function createCardHTML(post) {
+          const image_url = post.image_url
+            return `
+                <div class="w-72 bg-white rounded-xl shadow-lg overflow-hidden flex-shrink-0">
+                    
+                    <div class="h-40 bg-gray-300">
+                        <img 
+                            src="${post.image_url}" 
+                            alt="${post.title}" 
+                            class="w-full h-full object-cover"
+                        >
+                    </div>
+                    
+                    <div class="p-4">
+                        <h2 class="text-2xl font-bold text-black mb-1">
+                            ${post.title}
+                        </h2>
+                        
+                        <p class="text-sm text-gray-700 mb-2">
+                            ${post.author}
+                        </p>
+                        
+                        <p class="text-sm text-gray-500">
+                            ${post.excerpt}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
