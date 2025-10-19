@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>貼文內容頁面</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#DAB6E8] flex justify-center items-start min-h-screen p-8">
+
+  <div class="flex w-full max-w-6xl gap-6">
+    <!-- 左側主貼文 -->
+    <section class="bg-white rounded-xl shadow-md flex-1 p-8">
+      <h1 id="title" class="text-3xl font-semibold mb-2">ASI亞洲邀請賽精彩回顧</h1>
+      <div class="text-gray-500 mb-4 flex">
+        <p id="author" class="">Lucid</p>
+      </div>
+      <div id="content" class="w-full mb-6">
+        <p>diable真的好強! 國師看了都說讚</p>
+        <img src="./img/diable五殺.png" alt="貼文圖片" class="w-full rounded-md mt-4">
+      </div>
+
+      <div class="border-t border-gray-300 pt-4 flex items-center space-x-2">
+        <button class="like flex items-center" id="likeBtn">
+          <svg id="heartIcon" xmlns="http://www.w3.org/2000/svg" fill="none"
+               viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+               class="w-7 h-7 transition-colors duration-200">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5A4.69 4.69 0 0012 5.865a4.69 4.69 0 00-4.312-2.115C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+          </svg>
+          <span id="likeCount" class="text-lg ml-1">0</span>
+          <span class="text-lg ml-2">喜歡</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 右側留言區 -->
+    <aside class="w-80 space-y-4">
+      <!-- 留言輸入 -->
+      <div class="flex space-x-2">
+        <input type="text" id="comment_content" placeholder="寫下你的留言吧！"
+               class="flex-1 rounded-md px-3 py-2 text-sm text-gray-700 placeholder-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        <button type="submit" id="commentBtn"
+                class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600">發佈</button>
+      </div>
+
+      <!-- 留言列表 -->
+      <div id="commentList" class="space-y-3"></div>
+    </aside>
+  </div>
+
+  <script>
+    // === 設定 ===
+    const API = "http://127.0.0.1:8000"; // FastAPI 後端位址
+    const urlParams = new URLSearchParams(window.location.search);
+    const postSlug = urlParams.get('slug');
+
+    // === 元素 ===
+    const titleEl = document.getElementById('title'); // 新增
+    const authorEl = document.getElementById('author'); // 新增
+    const contentEl = document.getElementById('content'); // 新增
+    const likeBtn = document.getElementById("likeBtn");
+    const icon = document.getElementById("heartIcon");
+    const count = document.getElementById("likeCount");
+    const commentBtn = document.getElementById("commentBtn");
+    const commentInput = document.getElementById("comment_content");
+    const commentList = document.getElementById("commentList");
+
+    let liked = false;
+    
+    // === 1. 【新增】填充文章內容的函數 (修正 fillPostContent is not defined) ===
+    function fillPostContent(post) {
+        titleEl.textContent = post.title || "無標題";
+        authorEl.textContent = `作者: ${post.author || "未知"}`;
+        
+        // 確保 content 元素正確地更新內容和圖片
+        // 這裡需要用 post.content 來替換掉靜態內容
+        contentEl.innerHTML = `
+            <p>${post.content || "文章內容為空。"}</p>
+            <img 
+                src="${post.image_url || 'https://via.placeholder.com/960x540/D3D3D3/000000?text=Image+Load+Error'}" 
+                alt="${post.title} 貼文圖片" 
+                class="w-full rounded-md mt-4"
+                onerror="this.onerror=null; this.src='https://via.placeholder.com/960x540/D3D3D3/000000?text=Image+Load+Error';"
+            >
+        `;
+    }
+
+    // === 2. 渲染留言函數 (您的原有代碼，位置修正) ===
+    function renderComments(comments) {
+        commentList.innerHTML = "";
+        if (!comments || comments.length === 0) {
+             commentList.innerHTML = '<p class="text-gray-500">尚無留言。</p>';
+             return;
+        }
+
+        comments.forEach(c => {
+            const div = document.createElement("div");
+            div.className = "bg-white rounded-md p-4 shadow-sm";
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <p class="font-medium">${c.user}</p>
+                    <span class="text-sm text-gray-500">${c.date || new Date().toLocaleDateString()}</span>
+                </div>
+                <p class="text-gray-800 leading-relaxed">${c.content}</p>
+            `;
+            commentList.appendChild(div);
+        });
+    }
+
+    // === 3. 初始化 (init) 函數 (修正 API 邏輯) ===
+    async function init() {
+        console.log("從 URL 獲取的 Slug:", postSlug); // 保持偵錯
+
+        if (!postSlug) {
+            titleEl.textContent = "錯誤：找不到文章代號";
+            return;
+        }
+
+        try {
+            // 獲取文章詳情 (包含所有需要的數據，假設您的 API 返回 likes/comments)
+            const res = await fetch(`${API}/api/posts/${postSlug}`);
+            
+            if (res.status === 404) {
+                titleEl.textContent = "文章不存在";
+                return;
+            }
+            
+            // 由於您在 init() 中只呼叫了一次 API，我們假設它返回所有數據
+            const postData = await res.json(); 
+            
+            // 填充文章內容
+            fillPostContent(postData);
+
+            // 填充留言和點讚數據
+            count.textContent = postData.likes || 0; // 確保有預設值
+            renderComments(postData.comments || []); // 確保有預設值
+
+        } catch (error) {
+            console.error("初始化失敗:", error);
+            titleEl.textContent = "載入失敗，請檢查 API 或伺服器日誌。";
+        }
+    }
+
+    // === 點愛心 (API 呼叫路徑修正) ===
+    likeBtn.addEventListener("click", async () => {
+        if (!postSlug) return;
+        liked = !liked;
+        const action = liked ? "like" : "unlike";
+
+        icon.setAttribute("fill", liked ? "red" : "none");
+        icon.setAttribute("stroke", liked ? "red" : "currentColor");
+
+        const res = await fetch(`${API}/api/posts/${postSlug}/like`, { // 修正 API 路徑
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        count.textContent = data.likes || 0;
+    });
+
+    // === 發佈留言 (API 呼叫路徑修正) ===
+    commentBtn.addEventListener("click", async () => {
+        if (!postSlug) return alert("無法發佈，缺少文章代號！");
+        const content = commentInput.value.trim();
+        if (!content) return alert("請輸入留言內容！");
+        const user = "訪客";
+
+        const res = await fetch(`${API}/api/posts/${postSlug}/comment`, { // 修正 API 路徑
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user, content })
+        });
+        const data = await res.json();
+        renderComments(data.comments || []);
+        commentInput.value = "";
+    });
+
+    init(); // 啟動初始化
+</script>
+</body>
+</html>
