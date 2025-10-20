@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import logging
+import os
 
 from db.engine import engine
 from db.init_data import init_database
@@ -59,4 +60,5 @@ app.include_router(posts_router)
 
 if __name__ == "__main__":
     # 運行在 8000 埠
+
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
