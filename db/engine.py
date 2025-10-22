@@ -12,10 +12,11 @@ import os # 處理環境變數，解決 Vercel 上的 NameError
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
-    # 部署到 Vercel 時使用 PostgreSQL
-    # SQLAlchemy 需要明確指定驅動 'postgresql+psycopg2'
+    # 這是最保險的邏輯：檢查兩種常見的 Supabase/Postgres 變體
     if DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+    elif DATABASE_URL.startswith("postgres://"): # <--- 確保這行邏輯存在
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
 
     # 創建引擎
     engine = create_engine(
@@ -62,3 +63,4 @@ def get_db():
 
 # 注意：當您部署到 Vercel 時，請確保已在 Vercel 環境變數中設置 DATABASE_URL，
 # 並且您的 requirements.txt 中包含 psycopg2-binary。
+
