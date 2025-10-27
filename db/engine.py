@@ -21,7 +21,12 @@ else:
     # 針對 Supabase (PostgreSQL) 外部資料庫
     # SQLAlchemy 的連線字串需要使用 'postgresql' 作為驅動，
     # 確保連線字串是正確的格式，例如：postgresql://...
-    engine = create_engine(DATABASE_URL)
+    # 強制使用 IPv4
+    connect_args = {"sslmode": "require"}
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args=connect_args,
+        pool_pre_ping=True
     print(f"Connecting to external database using: {DATABASE_URL[:20]}...")
 
 # 創建 SessionLocal 類別
@@ -35,4 +40,5 @@ def get_db():
         db.close()
 
 __all__ = ["engine", "SessionLocal", "get_db"]
+
 
