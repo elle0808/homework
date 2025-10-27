@@ -26,6 +26,13 @@ else:
 
 # 創建 SessionLocal 類別
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def get_db():
+    """產生資料庫 Session，供 FastAPI Dependency 使用"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# 為了讓 main.py 正常導入，確保 engine 變數被導出
-__all__ = ["engine", "SessionLocal"]
+__all__ = ["engine", "SessionLocal", "get_db"]
+
