@@ -65,6 +65,14 @@ def serve_index():
     if os.path.exists(html_path):
         return FileResponse(html_path, media_type="text/html")
     return {"error": "index.html not found"}
+    
+@app.get("/post.html")
+def serve_post_page():
+    html_path = os.path.join(os.getcwd(), "post.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path, media_type="text/html")
+    # 如果找不到檔案，返回 404 錯誤
+    raise HTTPException(status_code=404, detail="post.html not found in root directory")
 
 if __name__ == "__main__":
     # 運行在 8000 埠
