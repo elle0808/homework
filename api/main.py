@@ -58,7 +58,15 @@ app.mount("/img", StaticFiles(directory="img"), name="img")
 # 註冊路由
 app.include_router(posts_router)
 
+@app.get("/")
+def serve_index():
+    html_path = os.path.join(os.getcwd(), "index.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path, media_type="text/html")
+    return {"error": "index.html not found"}
+
 if __name__ == "__main__":
     # 運行在 8000 埠
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True
+               
