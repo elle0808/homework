@@ -26,7 +26,7 @@ else:
     engine = create_engine(
         DATABASE_URL,
         connect_args=connect_args,
-        pool_pre_ping=True
+        pool_pre_ping=True)
     print(f"Connecting to external database using: {DATABASE_URL[:20]}...")
 
 # 創建 SessionLocal 類別
@@ -40,5 +40,6 @@ def get_db():
         db.close()
 
 __all__ = ["engine", "SessionLocal", "get_db"]
+
 
 
